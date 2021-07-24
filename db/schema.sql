@@ -6,14 +6,14 @@ USE employee_db;
 
 -- Table for departments --
 CREATE TABLE department (
-  id INT NOT NULL,
+  id INT NOT NULL AUTO_INCREMENT,
   name VARCHAR(30),
   PRIMARY KEY (id)
 );
 
 -- Table for roles for employees --
 CREATE TABLE role (
-  id INT NOT NULL,
+  id INT NOT NULL AUTO_INCREMENT,
   title VARCHAR(30),
   salary DECIMAL,
   department_id INT,
@@ -23,7 +23,7 @@ CREATE TABLE role (
 
 -- Table for employees --
 CREATE TABLE employee (
-  id INT NOT NULL,
+  id INT NOT NULL AUTO_INCREMENT,
   first_name VARCHAR(30),
   last_name VARCHAR(30),
   role_id INT,
