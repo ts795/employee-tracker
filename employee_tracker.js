@@ -1,4 +1,23 @@
+// Import and require inquirer
 const inquirer = require('inquirer');
+// Import and require mysql2
+const mysql = require('mysql2');
+
+// Get the password from an envurionment variable or leave it empty if it is not specified
+const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || '';
+
+//Connect to database
+const db = mysql.createConnection(
+    {
+        host: 'localhost',
+        // MySQL username,
+        user: 'root',
+        // MySQL password
+        password: MYSQL_PASSWORD,
+        database: 'employee_db'
+    },
+    console.log(`Connected to the employee_db database.`)
+);
 
 function getNextAction() {
     return new Promise(function (resolve, reject) {
@@ -16,13 +35,19 @@ function getNextAction() {
                 switch (response.choice) {
                     case "quit":
                         resolve();
-                        break;
-                    default:
-                        getNextAction().then(() => resolve())
+                        return;
+                    case "view all departments":
+                        db.promise().query("SELECT * FROM department")
+                            .then(([rows, fields]) => {
+                                console.log("\n");
+                                console.table(rows);
+                            })
+                            .catch(console.log);
                         break;
                 }
+                getNextAction().then(() => resolve())
             })
     });
 };
 
-getNextAction().then((response) => console.log("Exiting"));
+getNextAction().then(() => db.end());
