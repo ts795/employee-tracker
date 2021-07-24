@@ -6,6 +6,17 @@ const mysql = require('mysql2');
 // Get the password from an envurionment variable or leave it empty if it is not specified
 const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || '';
 
+// Display the contents of a table to the console
+function showTableContents(dbConnection, tableName) {
+    var query = `SELECT * FROM ${tableName}`;
+    dbConnection.promise().query(query)
+        .then(([rows, fields]) => {
+            console.log("\n");
+            console.table(rows);
+        })
+        .catch(console.log);
+}
+
 //Connect to database
 const db = mysql.createConnection(
     {
@@ -37,12 +48,13 @@ function getNextAction() {
                         resolve();
                         return;
                     case "view all departments":
-                        db.promise().query("SELECT * FROM department")
-                            .then(([rows, fields]) => {
-                                console.log("\n");
-                                console.table(rows);
-                            })
-                            .catch(console.log);
+                        showTableContents(db, "department");
+                        break;
+                    case "view all roles":
+                        showTableContents(db, "role");
+                        break;
+                    case "view all employees":
+                        showTableContents(db, "employee");
                         break;
                 }
                 getNextAction().then(() => resolve())
