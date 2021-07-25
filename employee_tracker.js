@@ -6,6 +6,78 @@ const mysql = require('mysql2');
 // Get the password from an envurionment variable or leave it empty if it is not specified
 const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || '';
 
+// Get a first name and last name from a full name
+function getFirstAndLastFromFullName(fullNameInput) {
+    var returnVal = { firstName: '', lastName: '' };
+    // remove trailing and leading whitespaces
+    var fullName = fullNameInput.trim();
+    // Get the first and last name from the full name by splitting on spaces
+    var splitName = fullName.split(" ");
+    if (splitName.length >= 1) {
+        returnVal.firstName = splitName[0];
+    }
+    if (splitName.length >= 2) {
+        returnVal.lastName = splitName[splitName.length - 1]
+    }
+    return returnVal;
+}
+
+// Get all employees
+function getAllEmployees(dbConnection) {
+    return new Promise(function (resolve, reject) {
+        var query = `SELECT * FROM employee`;
+        dbConnection.promise().query(query)
+            .then(function ([rows, fields]) {
+                // create a list of employee names to display and sort it by alphabetical order
+                var employeeNames = rows.map(row => row.first_name + " " + row.last_name);
+                resolve(employeeNames);
+                return;
+            })
+            .catch(err => console.error(err));
+    });
+}
+
+// Update an employee's role
+function updateAnEmployeeRole(dbConnection) {
+    var userInputs = null;
+    return new Promise(function (resolve, reject) {
+        // Get a list of the employees
+        getAllEmployees(dbConnection)
+            .then(function (employeeNames) {
+                return inquirer.prompt([
+                    {
+                        type: 'list',
+                        message: "Which employee's role do you want to update?",
+                        name: "employee_to_update",
+                        choices: employeeNames
+                    },
+                    {
+                        type: 'input',
+                        message: "What is the employee's new role?",
+                        name: "new_role"
+                    }
+                ]);
+            })
+            .then(function (response) {
+                // Lookup the ID for the role
+                userInputs = response;
+                return lookupID(dbConnection, `SELECT id FROM ROLE WHERE title = ?`, [response.new_role]);
+            })
+            .then(function (id) {
+                // Update the role for the employee
+                var { firstName, lastName } = getFirstAndLastFromFullName(userInputs.employee_to_update);
+                return dbConnection.promise().query("UPDATE employee SET role_id = ? WHERE first_name = ? AND last_name = ?", [id, firstName, lastName]);
+            })
+            .then(function ([rows, fields]) {
+                return getNextAction(dbConnection);
+            })
+            .then(function () {
+                resolve();
+                return dbConnection;
+            });
+    });
+}
+
 // Add an employee to the database
 function addAnEmployee(dbConnection) {
     return new Promise(function (resolve, reject) {
@@ -218,6 +290,8 @@ function getNextAction(db) {
                         return addARole(db);
                     case "add an employee":
                         return addAnEmployee(db);
+                    case "update an employee role":
+                        return updateAnEmployeeRole(db);
                 }
             })
             .then((db) => resolve(db))
