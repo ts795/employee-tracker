@@ -6,6 +6,52 @@ const mysql = require('mysql2');
 // Get the password from an envurionment variable or leave it empty if it is not specified
 const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || '';
 
+// Add a role to the database
+function addARole(dbConnection) {
+    return new Promise(function (resolve, reject) {
+        var userResponse = {};
+        inquirer
+            .prompt([
+                {
+                    type: 'input',
+                    message: 'What is the name of the role?',
+                    name: 'role_name',
+                },
+                {
+                    type: 'input',
+                    message: 'What is the salary of the role?',
+                    name: 'salary',
+                },
+                {
+                    type: 'input',
+                    message: 'Which department does the role belong to?',
+                    name: 'department',
+                },
+            ],
+            )
+            .then(function (response) {
+                // Save the user response so it can be used once the department ID is determined
+                userResponse = response;
+                return lookupID(dbConnection, `SELECT id FROM DEPARTMENT WHERE name = ?`, [response.department]);
+            })
+            .then(function (id) {
+                return dbConnection.promise().query("INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)", [userResponse.role_name, userResponse.salary, id]);
+            })
+            .then(([rows, fields]) => {
+                return dbConnection;
+            })
+            .then(function (db) {
+                return getNextAction(db);
+            })
+            .then(function (dbConnection) {
+                resolve();
+                return dbConnection
+            })
+            .catch(err => console.error(err));
+    }
+    );
+}
+
 // Add a department to the database
 function addADepartment(dbConnection) {
     return new Promise(function (resolve, reject) {
@@ -34,6 +80,21 @@ function addADepartment(dbConnection) {
             .catch(err => console.error(err));
     }
     )
+}
+
+// Execute query for looking up the ID of a department, role, or employee
+function lookupID(dbConnection, query, queryArgs) {
+    return new Promise(function (resolve, reject) {
+        dbConnection.promise().query(query, queryArgs)
+            .then(([rows, fields]) => {
+                var id = null;
+                if (rows.length !== 0) {
+                    id = rows[0].id;
+                }
+                return resolve(id);
+            })
+            .catch(err => console.error(err));
+    });
 }
 
 // Display the contents of a table to the console
@@ -80,6 +141,8 @@ function getNextAction(db) {
                         return showTableContents(db, "employee");
                     case "add a department":
                         return addADepartment(db);
+                    case "add a role":
+                        return addARole(db);
                 }
             })
             .then((db) => resolve(db))
