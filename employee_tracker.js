@@ -169,6 +169,42 @@ function viewEmployeesByDepartment(dbConnection) {
     });
 }
 
+// View the department budget
+function viewDepartmentBudget(dbConnection) {
+    var userInputs = null;
+    return new Promise(function (resolve, reject) {
+        // Get all departments
+        var query = "select * from department";
+        dbConnection.promise().query(query)
+            .then(function ([rows, fields]) {
+                var department_list = rows.map((row) => row.name);
+                return inquirer.prompt([
+                    {
+                        type: 'list',
+                        message: "Which department do you want to get the budget for?",
+                        name: "department",
+                        choices: department_list
+                    }
+                ]);
+            })
+            .then(function (response) {
+                var query = "select COALESCE(sum(r.salary), 0) as department_budget from employee as e join role as r on e.role_id = r.id join department as d on r.department_id = d.id where d.name=?";
+                return dbConnection.promise().query(query, [response.department])
+            })
+            .then(function ([rows, fields]) {
+                console.table(rows);
+                return;
+            })
+            .then(function () {
+                return getNextAction(dbConnection);
+            })
+            .then(function () {
+                resolve();
+                return dbConnection;
+            });
+    });
+}
+
 // View employees by Manager
 function viewEmployeesByManager(dbConnection) {
     var userInputs = null;
@@ -467,7 +503,7 @@ function getNextAction(db) {
                 {
                     type: 'list',
                     message: 'What would you like to do?',
-                    choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "update an employee's manager", "view employees by manager", "view employees by department", "delete a department", "delete a role", "delete an employee", "quit"],
+                    choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "update an employee's manager", "view employees by manager", "view employees by department", "delete a department", "delete a role", "delete an employee", "view department budget", "quit"],
                     name: 'choice',
                     loop: false
                 }
@@ -502,6 +538,8 @@ function getNextAction(db) {
                         return deleteARole(db);
                     case "delete an employee":
                         return deleteAnEmployee(db);
+                    case "view department budget":
+                        return viewDepartmentBudget(db);
                 }
             })
             .then((db) => resolve(db))
