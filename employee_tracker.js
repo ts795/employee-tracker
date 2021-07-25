@@ -83,8 +83,6 @@ function addAnEmployee(dbConnection) {
     return new Promise(function (resolve, reject) {
         var userResponse = {};
         var role_id = null;
-        var firstName = "";
-        var lastName = "";
         inquirer
             .prompt([
                 {
@@ -120,17 +118,7 @@ function addAnEmployee(dbConnection) {
                 role_id = id;
                 // Get the ID for the manager
                 // Get the first and last name from the user's input
-                // remove trailing and leading whitespaces
-                var fullName = userResponse.manager.trim();
-                // Get the first and last name from the full name by splitting on spaces
-                var splitName = fullName.split(" ");
-                if (splitName.length >= 1) {
-                    firstName = splitName[0];
-                }
-                if (splitName.length >= 2) {
-                    lastName = splitName[splitName.length - 1]
-                }
-
+                var { firstName, lastName } = getFirstAndLastFromFullName(userResponse.manager);
                 return lookupID(dbConnection, `SELECT id FROM employee WHERE first_name = ? AND last_name = ?`, [firstName, lastName]);
             })
             .then(function (manager_id) {
