@@ -39,6 +39,43 @@ function getAllEmployees(dbConnection) {
     });
 }
 
+// View employees by Manager
+function viewEmployeesByManager(dbConnection) {
+    var userInputs = null;
+    return new Promise(function (resolve, reject) {
+        // Get all managers
+        var query = "select DISTINCT e2.first_name as manager_first_name, e2.last_name as manager_last_name FROM employee e1 JOIN employee e2 ON e1.manager_id = e2.id";
+        dbConnection.promise().query(query)
+            .then(function ([rows, fields]) {
+                var managers_list = rows.map((row) => row.manager_first_name + " " + row.manager_last_name);
+                return inquirer.prompt([
+                    {
+                        type: 'list',
+                        message: "Which manager do you want to display employees for?",
+                        name: "manager",
+                        choices: managers_list
+                    }
+                ]);
+            })
+            .then(function (response) {
+                var { firstName, lastName } = getFirstAndLastFromFullName(response.manager);
+                var query = "select e1.first_name, e1.last_name  FROM employee e1 JOIN employee e2 ON e1.manager_id = e2.id where e2.first_name = ? AND e2.last_name = ?";
+                return dbConnection.promise().query(query, [firstName, lastName])
+            })
+            .then(function ([rows, fields]) {
+                console.table(rows);
+                return;
+            })
+            .then(function () {
+                return getNextAction(dbConnection);
+            })
+            .then(function () {
+                resolve();
+                return dbConnection;
+            });
+    });
+}
+
 // Update an employee's role
 function updateAnEmployeeRole(dbConnection) {
     var userInputs = null;
@@ -300,7 +337,7 @@ function getNextAction(db) {
                 {
                     type: 'list',
                     message: 'What would you like to do?',
-                    choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "update an employee's manager", "quit"],
+                    choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "update an employee's manager", "view employees by manager", "quit"],
                     name: 'choice',
                     loop: false
                 }
@@ -325,6 +362,8 @@ function getNextAction(db) {
                         return updateAnEmployeeRole(db);
                     case "update an employee's manager":
                         return updateAnEmployeeManager(db);
+                    case "view employees by manager":
+                        return viewEmployeesByManager(db);
                 }
             })
             .then((db) => resolve(db))
