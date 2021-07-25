@@ -39,6 +39,38 @@ function getAllEmployees(dbConnection) {
     });
 }
 
+// Delete a department
+function deleteADepartment(dbConnection) {
+    var userInputs = null;
+    return new Promise(function (resolve, reject) {
+        // Get all departments
+        var query = "select * from department";
+        dbConnection.promise().query(query)
+            .then(function ([rows, fields]) {
+                var department_list = rows.map((row) => row.name);
+                return inquirer.prompt([
+                    {
+                        type: 'list',
+                        message: "Which department do you want to delete?",
+                        name: "department",
+                        choices: department_list
+                    }
+                ]);
+            })
+            .then(function (response) {
+                var query = "DELETE FROM department WHERE name = ?";
+                return dbConnection.promise().query(query, [response.department])
+            })
+            .then(function ([rows, fields]) {
+                return getNextAction(dbConnection);
+            })
+            .then(function () {
+                resolve();
+                return dbConnection;
+            });
+    });
+}
+
 // View employees by department
 function viewEmployeesByDepartment(dbConnection) {
     var userInputs = null;
@@ -373,7 +405,7 @@ function getNextAction(db) {
                 {
                     type: 'list',
                     message: 'What would you like to do?',
-                    choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "update an employee's manager", "view employees by manager", "view employees by department", "quit"],
+                    choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "update an employee's manager", "view employees by manager", "view employees by department", "delete a department", "quit"],
                     name: 'choice',
                     loop: false
                 }
@@ -402,6 +434,8 @@ function getNextAction(db) {
                         return viewEmployeesByManager(db);
                     case "view employees by department":
                         return viewEmployeesByDepartment(db);
+                    case "delete a department":
+                        return deleteADepartment(db);
                 }
             })
             .then((db) => resolve(db))
