@@ -6,6 +6,79 @@ const mysql = require('mysql2');
 // Get the password from an envurionment variable or leave it empty if it is not specified
 const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || '';
 
+// Add an employee to the database
+function addAnEmployee(dbConnection) {
+    return new Promise(function (resolve, reject) {
+        var userResponse = {};
+        var role_id = null;
+        var firstName = "";
+        var lastName = "";
+        inquirer
+            .prompt([
+                {
+                    type: 'input',
+                    message: "What is the employee's first name?",
+                    name: 'first_name',
+                },
+                {
+                    type: 'input',
+                    message: "What is the employee's last name?",
+                    name: 'last_name',
+                },
+                {
+                    type: 'input',
+                    message: "What is the employee's role?",
+                    name: 'role',
+                },
+                {
+                    type: 'input',
+                    message: "Who is the employee's manager?",
+                    name: 'manager',
+                },
+            ],
+            )
+            .then(function (response) {
+                // Save the user response
+                userResponse = response;
+                // Get the ID for the role
+                return lookupID(dbConnection, `SELECT id FROM ROLE WHERE title = ?`, [response.role]);
+            })
+            .then(function (id) {
+                // Save the ID for the role
+                role_id = id;
+                // Get the ID for the manager
+                // Get the first and last name from the user's input
+                // remove trailing and leading whitespaces
+                var fullName = userResponse.manager.trim();
+                // Get the first and last name from the full name by splitting on spaces
+                var splitName = fullName.split(" ");
+                if (splitName.length >= 1) {
+                    firstName = splitName[0];
+                }
+                if (splitName.length >= 2) {
+                    lastName = splitName[splitName.length - 1]
+                }
+
+                return lookupID(dbConnection, `SELECT id FROM employee WHERE first_name = ? AND last_name = ?`, [firstName, lastName]);
+            })
+            .then(function (manager_id) {
+                return dbConnection.promise().query("INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)", [userResponse.first_name, userResponse.last_name, role_id, manager_id]);
+            })
+            .then(([rows, fields]) => {
+                return dbConnection;
+            })
+            .then(function (db) {
+                return getNextAction(db);
+            })
+            .then(function (dbConnection) {
+                resolve();
+                return dbConnection
+            })
+            .catch(err => console.error(err));
+    }
+    );
+}
+
 // Add a role to the database
 function addARole(dbConnection) {
     return new Promise(function (resolve, reject) {
@@ -143,6 +216,8 @@ function getNextAction(db) {
                         return addADepartment(db);
                     case "add a role":
                         return addARole(db);
+                    case "add an employee":
+                        return addAnEmployee(db);
                 }
             })
             .then((db) => resolve(db))
