@@ -78,6 +78,47 @@ function updateAnEmployeeRole(dbConnection) {
     });
 }
 
+// Update an employee's manager
+function updateAnEmployeeManager(dbConnection) {
+    var userInputs = null;
+    return new Promise(function (resolve, reject) {
+        // Get a list of the employees
+        getAllEmployees(dbConnection)
+            .then(function (employeeNames) {
+                return inquirer.prompt([
+                    {
+                        type: 'list',
+                        message: "Which employee's manager do you want to update?",
+                        name: "employee_to_update",
+                        choices: employeeNames
+                    },
+                    {
+                        type: 'input',
+                        message: "Who is the employee's new manager?",
+                        name: "new_manager"
+                    }
+                ]);
+            })
+            .then(function (response) {
+                userInputs = response;
+                var { firstName, lastName } = getFirstAndLastFromFullName(response.new_manager);
+                return lookupID(dbConnection, `SELECT id FROM employee WHERE first_name = ? AND last_name = ?`, [firstName, lastName]);
+            })
+            .then(function (id) {
+                // Update the Manager's ID for the employee
+                var { firstName, lastName } = getFirstAndLastFromFullName(userInputs.employee_to_update);
+                return dbConnection.promise().query("UPDATE employee SET manager_id = ? WHERE first_name = ? AND last_name = ?", [id, firstName, lastName]);
+            })
+            .then(function ([rows, fields]) {
+                return getNextAction(dbConnection);
+            })
+            .then(function () {
+                resolve();
+                return dbConnection;
+            });
+    });
+}
+
 // Add an employee to the database
 function addAnEmployee(dbConnection) {
     return new Promise(function (resolve, reject) {
@@ -257,7 +298,7 @@ function getNextAction(db) {
                 {
                     type: 'list',
                     message: 'What would you like to do?',
-                    choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "quit"],
+                    choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "update an employee's manager", "quit"],
                     name: 'choice',
                     loop: false
                 }
@@ -280,6 +321,8 @@ function getNextAction(db) {
                         return addAnEmployee(db);
                     case "update an employee role":
                         return updateAnEmployeeRole(db);
+                    case "update an employee's manager":
+                        return updateAnEmployeeManager(db);
                 }
             })
             .then((db) => resolve(db))
