@@ -39,6 +39,38 @@ function getAllEmployees(dbConnection) {
     });
 }
 
+// Delete an employee
+function deleteAnEmployee(dbConnection) {
+    return new Promise(function (resolve, reject) {
+        // Get all employees
+        var query = "select * from employee";
+        dbConnection.promise().query(query)
+            .then(function ([rows, fields]) {
+                var employee_list = rows.map((row) => row.first_name + " " + row.last_name);
+                return inquirer.prompt([
+                    {
+                        type: 'list',
+                        message: "Which employee do you want to delete?",
+                        name: "employee",
+                        choices: employee_list
+                    }
+                ]);
+            })
+            .then(function (response) {
+                var { firstName, lastName } = getFirstAndLastFromFullName(response.employee);
+                var query = "DELETE FROM employee WHERE first_name = ? AND last_name = ?";
+                return dbConnection.promise().query(query, [firstName, lastName]);
+            })
+            .then(function ([rows, fields]) {
+                return getNextAction(dbConnection);
+            })
+            .then(function () {
+                resolve();
+                return dbConnection;
+            });
+    });
+}
+
 // Delete a role
 function deleteARole(dbConnection) {
     return new Promise(function (resolve, reject) {
@@ -435,7 +467,7 @@ function getNextAction(db) {
                 {
                     type: 'list',
                     message: 'What would you like to do?',
-                    choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "update an employee's manager", "view employees by manager", "view employees by department", "delete a department", "delete a role", "quit"],
+                    choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "update an employee's manager", "view employees by manager", "view employees by department", "delete a department", "delete a role", "delete an employee", "quit"],
                     name: 'choice',
                     loop: false
                 }
@@ -468,6 +500,8 @@ function getNextAction(db) {
                         return deleteADepartment(db);
                     case "delete a role":
                         return deleteARole(db);
+                    case "delete an employee":
+                        return deleteAnEmployee(db);
                 }
             })
             .then((db) => resolve(db))
