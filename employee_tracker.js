@@ -1,7 +1,7 @@
 // Import and require inquirer
 const inquirer = require('inquirer');
 // Import and require mysql2
-const mysql = require('mysql2/promise');
+const mysql = require('mysql2');
 
 // Get the password from an envurionment variable or leave it empty if it is not specified
 const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || '';
@@ -19,7 +19,7 @@ function addADepartment(dbConnection) {
             ],
             )
             .then(function (response) {
-                return dbConnection.query("INSERT INTO department (name) VALUES (?)", [response.department_name]);
+                return dbConnection.promise().query("INSERT INTO department (name) VALUES (?)", [response.department_name]);
             })
             .then(([rows, fields]) => {
                 return dbConnection;
@@ -27,7 +27,10 @@ function addADepartment(dbConnection) {
             .then(function (db) {
                 return getNextAction(db);
             })
-            .then((dbConnection) => dbConnection)
+            .then(function (dbConnection) {
+                resolve();
+                return dbConnection
+            })
             .catch(err => console.error(err));
     }
     )
@@ -37,7 +40,7 @@ function addADepartment(dbConnection) {
 function showTableContents(dbConnection, tableName) {
     return new Promise(function (resolve, reject) {
         var query = `SELECT * FROM ${tableName}`;
-        dbConnection.query(query)
+        dbConnection.promise().query(query)
             .then(([rows, fields]) => {
                 console.table(rows);
                 return dbConnection;
@@ -45,12 +48,13 @@ function showTableContents(dbConnection, tableName) {
             .then(function (db) {
                 return getNextAction(db);
             })
-            .then((dbConnection) => dbConnection)
+            .then(function (dbConnection) {
+                resolve();
+                return dbConnection
+            })
             .catch(err => console.error(err));
     });
 }
-
-console.log(`Connected to the employee_db database.`)
 
 function getNextAction(db) {
     return new Promise(function (resolve, reject) {
@@ -84,7 +88,7 @@ function getNextAction(db) {
 };
 
 //Connect to database
-mysql.createConnection(
+var db = mysql.createConnection(
     {
         host: 'localhost',
         // MySQL username,
@@ -93,6 +97,10 @@ mysql.createConnection(
         password: MYSQL_PASSWORD,
         database: 'employee_db'
     }
-)
-    .then((db) => getNextAction(db))
-    .then((db) => db.close());
+);
+
+console.log(`Connected to the employee_db database.`)
+
+getNextAction(db).
+    then(() => console.log("Exiting"))
+    .then(() => db.end());
