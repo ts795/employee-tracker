@@ -4,7 +4,7 @@
 
 ## Description
 
-This project implements a content management system for employee information. It allows for a company's departments, roles, and employee information to be stored in a mySQL database. The departments, roles, and employee information can be viewed, updated, and deleted. [Link to Screencast](https://drive.google.com/file/d/1G82HIIh2srPyCKwjxcZ0KJuA25m3DlYN/view)
+This project implements a content management system for employee information. It allows for a company's departments, roles, and employee information to be stored in a mySQL database. The departments, roles, and employee information can be viewed, updated, and deleted. [Link to Screencast](https://drive.google.com/file/d/1w5lVxEDzl9ykthzBWjJmBvIANtea_FA7/view)
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@ Node, mySQL and npm must be installed. Type npm install to install dependencies
   ```sh
     export MYSQL_PASSWORD="put your password here"
     node employee_tracker.js
-    ```
+```
 
 ## License
 
