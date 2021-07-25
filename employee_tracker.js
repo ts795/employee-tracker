@@ -481,7 +481,9 @@ function showTableContents(dbConnection, tableName) {
     return new Promise(function (resolve, reject) {
         var query = `SELECT * FROM ${tableName}`;
         if (tableName === "role") {
-            query = "SELECT r.id, r.title, r.salary, d.name FROM role r JOIN department d ON r.department_id = d.id";
+            query = "SELECT r.id, r.title, r.salary, d.name FROM role r LEFT JOIN department d ON r.department_id = d.id";
+        } else if (tableName === "employee") {
+            query = "SELECT e.id, e.first_name, e.last_name, r.title, d.name, r.salary, CONCAT(e2.first_name, ' ', e2.last_name) as manager_name from employee as e LEFT JOIN role as r on e.role_id = r.id LEFT JOIN department as d on r.department_id = d.id LEFT JOIN employee e2 ON e.manager_id = e2.id";
         }
         dbConnection.promise().query(query)
             .then(([rows, fields]) => {
