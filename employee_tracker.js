@@ -480,6 +480,9 @@ function lookupID(dbConnection, query, queryArgs) {
 function showTableContents(dbConnection, tableName) {
     return new Promise(function (resolve, reject) {
         var query = `SELECT * FROM ${tableName}`;
+        if (tableName === "role") {
+            query = "SELECT r.id, r.title, r.salary, d.name FROM role r JOIN department d ON r.department_id = d.id";
+        }
         dbConnection.promise().query(query)
             .then(([rows, fields]) => {
                 console.table(rows);
