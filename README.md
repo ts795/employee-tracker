@@ -4,7 +4,7 @@
 
 ## Description
 
-This project implements a content management system for employee information. It allows for a company's departments, roles, and employee information to be stored in a mySQL database. The departments, roles, and employee information can be viewed, updated, and deleted. [Link to Screencast](https://drive.google.com/file/d/1w5lVxEDzl9ykthzBWjJmBvIANtea_FA7/view)
+This project implements a content management system for employee information. It allows for a company's departments, roles, and employee information to be stored in a mySQL database. The departments, roles, and employee information can be viewed, updated, and deleted. [Link to Screencast](https://drive.google.com/file/d/1CeCi_op0cdXIbTVgwkRA_6aNyh0Kyl0Z/view)
 
 ## Table of Contents
 
